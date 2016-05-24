@@ -160,10 +160,10 @@ describe("context", function () {
 
             it("can resolve cyclical dependencies", function () {
                 ctx.register("a",function () {
-                    return {dependencies: "b"};
+                    return {dependencies: ["b"]};
                 }).factory(di.factory.func);
                 ctx.register("b",function () {
-                    return {dependencies: "a"};
+                    return {dependencies: ["a"]};
                 }).factory(di.factory.func);
 
                 ctx.initialize();
@@ -176,7 +176,7 @@ describe("context", function () {
 
             it("can resolve dependencies with assignment", function () {
                 ctx.register("a",function () {
-                    return {dependencies: " bee = b ,be=b "};
+                    return {dependencies: ["bee = b", "be=b "]};
                 }).factory(di.factory.func);
                 ctx.register("b",function () {
                     return {};
@@ -190,7 +190,7 @@ describe("context", function () {
 
             it("can resolve dependencies from prototype to prototype", function () {
                 ctx.register("a",function () {
-                    return {dependencies: "b"};
+                    return {dependencies: ["b"]};
                 }).factory(di.factory.func).strategy(di.strategy.proto);
                 ctx.register("b",function () {
                     return {};
@@ -213,7 +213,7 @@ describe("context", function () {
 
             it("should allow creating prototype instance with dependencies", function () {
                 ctx.register("a",function (val) {
-                    return {value: val, dependencies: "b"};
+                    return {value: val, dependencies: ["b"]};
                 }, 10).factory(di.factory.func).strategy(di.strategy.proto);
                 ctx.register("b",function () {
                     return {};
@@ -246,7 +246,7 @@ describe("context", function () {
 
             it("should ignore empty dependencies", function () {
                 ctx.register("a",function () {
-                    return {dependencies: " "};
+                    return {dependencies: [" "]};
                 }).factory(di.factory.func);
 
                 ctx.initialize();
@@ -262,7 +262,7 @@ describe("context", function () {
 
             it("will report error if dependency are not fully satisfied", function () {
                 ctx.register("a",function () {
-                    return {dependencies: "b"};
+                    return {dependencies: ["b"]};
                 }).factory(di.factory.func);
 
                 try {
@@ -298,6 +298,15 @@ describe("context", function () {
 
                 ctx.initialize();
                 expect(ctx.get("a").b === ctx.get("b")).toBeTruthy();
+            });
+
+            it("should allow optional dependencies", function () {
+                ctx.register("a",function () {
+                    return {dependencies: ["b?"]};
+                }).factory(di.factory.func);
+
+                ctx.initialize();
+                expect(ctx.get("a").b === null).toBeTruthy();
             });
         });
     });

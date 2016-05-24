@@ -35,18 +35,28 @@ di = {
         }
 
         ctx.get = function (name) {
+            var optional = isOptionalDep(name);
+            name = getBaseName(name);
+
             if (ctx.has(name))
                 return ctx.entry(name).object();
+            else if (optional)
+                return null;
             else
                 throw "Object[" + name + "] is not registered";
         };
 
         ctx.create = function (name, args) {
+            var optional = isOptionalDep(name);
+            name = getBaseName(name);
+
             if (ctx.entry(name).strategy() != di.strategy.proto)
                 throw "Attempt to create singleton object";
 
             if (ctx.has(name))
                 return ctx.entry(name).create(args);
+            else if (optional)
+                return null;
             else
                 throw "Object[" + name + "] is not registered";
         };
@@ -67,22 +77,30 @@ di = {
             return s;
         }
 
+        function isOptionalDep(dep) {
+            return dep.indexOf('?', dep.length - 1) !== -1;
+        }
+
+        function getBaseName(dep) {
+            return dep.replace('?', '');
+        }
+
         ctx.inject = function (name, o, dependencies) {
             dependencies = dependencies ? dependencies : o.dependencies;
 
             if (o && dependencies) {
-                var depExpList = removeSpaces(dependencies).split(",");
+                var depExpList = typeof dependencies === 'string' ? removeSpaces(dependencies).split(",") : dependencies;
 
                 depExpList.forEach(function (depExp) {
+                    depExp = removeSpaces(depExp);
                     if (depExp) {
                         var exp = di.dependencyExpression(depExp);
-
                         var dep = ctx.get(exp.name);
 
-                        if (dep == null)
+                        if (dep == null && !isOptionalDep(exp.name))
                             throw "Dependency [" + name + "." + exp.property + "]->[" + exp.name + "] can not be satisfied";
 
-                        o[exp.property] = dep;
+                        o[getBaseName(exp.property)] = dep;
                     }
                 });
             }
@@ -205,7 +223,8 @@ di = {
             }
         }
     }
-};;di.utils = {};
+};
+;di.utils = {};
 
 di.utils.invokeStmt = function (args, op) {
     var exp = op ? op : "";
